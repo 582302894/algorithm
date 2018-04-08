@@ -338,36 +338,20 @@ $function[] = 'radixSort'; //基数排序
 $function[] = 'mergeSort'; //归并排序
 $function[] = 'heapSort'; //堆排序
 
-// $length = count($arr);
-// mergeSort($arr, 0, $length-1);
-// die;
-// foreach ($function as $key => $value) {
-//     $arr = null;
 
-//     $length = count($arr);
-//     timeStart();
-//     echo $value . "\t";
-//     if ($value == 'mergeSort' || $value = 'quickSort') {
-//         $value($arr, 0, $length - 1);
-//     } else {
-//         $value($arr, 0, $length);
-//     }
-//     timeEnd();
-// }
-
-for ($i = 0; $i < 10000; $i++) {
-    $arr[] = rand(1, 100000);
+ini_set('memory_limit','256M');
+for ($i = 0; $i < 10; $i++) {
+    $arr[] = rand(1, 100);
 }
-session_start();
-$_SESSION['time1'] = microtime(true);
+dump($arr);
+quickSort($arr, 0, count($arr) - 1);
+dump($arr);
+// session_start();
+// $_SESSION['time1'] = microtime(true);
 // quickSort($arr, 0, count($arr) - 1);
-// shellSort($arr);
-// radixSort($arr); 
-heapSort($arr,count($arr));
-// mergeSort($arr,0,count($arr)-1);
-$_SESSION['time2'] = microtime(true);
-echo '<pre>';
-var_dump($_SESSION['time2'] - $_SESSION['time1']);
-var_dump($_SESSION['time2']);
-var_dump($_SESSION['time1']);
-echo '</pre>';exit();
+// // shellSort($arr);
+// // radixSort($arr); 
+// // heapSort($arr,count($arr));
+// // mergeSort($arr,0,count($arr)-1);
+// $_SESSION['time2'] = microtime(true);
+// var_dump($_SESSION['time2'] - $_SESSION['time1']);
