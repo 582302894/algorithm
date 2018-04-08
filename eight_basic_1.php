@@ -36,11 +36,11 @@ function dump($arr, $i = null, $j = null, $start = null, $end = null, $pivot = n
 
 // }
 function bubbleSort(&$arr) {
-    $length = $arr;
+    $length = count($arr);
     for ($i = 0; $i < $length; $i++) {
         $flag = true;
         for ($j = $i + 1; $j < $length; $j++) {
-            if ($arr[$i] < $arr[$j]) {
+            if ($arr[$i] > $arr[$j]) {
                 $temp = $arr[$i];
                 $arr[$i] = $arr[$j];
                 $arr[$j] = $temp;
@@ -62,6 +62,9 @@ function bubbleSort(&$arr) {
  * 速排序是对冒泡排序的一种改进。基本思想是：通过一趟排序将要排序的数据分割成独立的两部分，其中一部分的所有数据都比另外一部分的所有数据都要小，然后再按此方法对这两部分数据分别进行快速排序，整个排序过程可以递归进行，以此实现整个数据变成有序序列。
  */
 function quickSort(&$arr, $min, $max) {
+    if ($min >= $max) {
+        return;
+    }
     $left = $min;
     $right = $max;
     $mid = $arr[$min];
@@ -76,7 +79,7 @@ function quickSort(&$arr, $min, $max) {
         $arr[$right] = $arr[$left];
     }
     $arr[$left] = $mid;
-    quickSort($arr, $min, $left);
+    quickSort($arr, $min, $left - 1);
     quickSort($arr, $left + 1, $max);
 }
 /**
@@ -92,9 +95,10 @@ function insertSort(&$arr) {
     for ($i = 1; $i < $length; $i++) {
         $temp = $arr[$i];
         for ($j = $i - 1; $j >= 0; $j--) {
-            if ($arr[$j] > $temp) {
-                $arr[$j + 1] = $arr[$j];
+            if ($arr[$j] <= $temp) {
+                break;
             }
+            $arr[$j + 1] = $arr[$j];
         }
         $arr[$j + 1] = $temp;
     }
@@ -110,19 +114,19 @@ function insertSort(&$arr) {
 function shellSort(&$arr) {
     $length = count($arr);
     $gap = intval($length / 2);
-    for ($i = $gap; $i < $length; $i++) {
-        for ($j = $i - $gap; $j < $length; $j += $gap) {
-            if ($arr[$i] < $arr[$j]) {
-                $temp = $arr[$i];
-                $arr[$i] = $arr[$j];
-                $arr[$j] = $temp;
+    while ($gap > 0) {
+        for ($i = $gap; $i < $length; $i++) {
+            for ($j = $i - $gap; $j >= 0; $j--) {
+                if ($arr[$j + $gap] > $arr[$j]) {
+                    $temp = $arr[$j + $gap];
+                    $arr[$j + $gap] = $arr[$j];
+                    $arr[$j] = $temp;
+                }
             }
         }
         $gap = intval($gap / 2);
-        if ($gap <= 0) {
-            break;
-        }
     }
+
 }
 /**
  * end shell排序
@@ -140,16 +144,16 @@ function shellSort(&$arr) {
 function selectSort(&$arr) {
     $length = count($arr);
     for ($i = 0; $i < $length; $i++) {
-        $minKey = 0;
+        $minKey = $i;
         for ($j = $i; $j < $length; $j++) {
-            if ($arr[$j] < $arr[$i]) {
+            if ($arr[$j] < $arr[$minKey]) {
                 $minKey = $j;
             }
         }
         if ($minKey != $i) {
             $temp = $arr[$i];
-            $arr[$i] = $arr[$j];
-            $arr[$j] = $temp;
+            $arr[$i] = $arr[$minKey];
+            $arr[$minKey] = $temp;
         }
     }
 }
@@ -182,10 +186,11 @@ function radixSort(&$arr) {
         $k = 0;
         for ($i = 0; $i < 10; $i++) {
             if ($order[$i] != 0) {
-                for ($j = 0; $j < $order[$lst]; $j++) {
+                for ($j = 0; $j < $order[$i]; $j++) {
                     $arr[$k++] = $temp[$i][$j];
                 }
             }
+            $order[$i] = 0;
         }
         $basicNume *= 10;
         $loop++;
@@ -202,12 +207,32 @@ function radixSort(&$arr) {
  */
 //堆排序
 function heapSort(&$arr) {
-
+    $length = count($arr);
+    for ($i = $length; $i > 0; $i--) {
+        maxHeap($arr, $i);
+        $max = $arr[0];
+        $arr[0] = $arr[$i - 1];
+        $arr[$i - 1] = $max;
+    }
 }
 //建立大根堆
 function maxHeap(&$arr, $max) {
     $maxKey = intval($max / 2);
     for ($i = $maxKey - 1; $i >= 0; $i--) {
+        $key = $i;
+        $left = 2 * $i + 1;
+        $right = 2 * $i + 2;
+        if ($left <= $max - 1 && $arr[$left] > $arr[$key]) {
+            $key = $left;
+        }
+        if ($right <= $max - 1 && $arr[$right] > $arr[$key]) {
+            $key = $right;
+        }
+        if ($key != $i) {
+            $temp = $arr[$key];
+            $arr[$key] = $arr[$i];
+            $arr[$i] = $temp;
+        }
     }
 }
 
@@ -221,12 +246,49 @@ function maxHeap(&$arr, $max) {
  */
 //分组
 function mergeSort(&$arr, $low, $high) {
-
+    if ($low < $high) {
+        $mid = intval(($low + $high) / 2);
+        mergeSort($arr, $low, $mid);
+        mergeSort($arr, $mid + 1, $high);
+        merge($arr, $low, $high, $mid);
+    }
 }
 //归并排序
 function merge(&$arr, $low, $high, $mid) {
-
+    $min = $low;
+    $max = $mid + 1;
+    $k = 0;
+    while ($min <= $mid && $max <= $high) {
+        if ($arr[$min] <= $arr[$max]) {
+            $temp[$k++] = $arr[$min++];
+        } else {
+            $temp[$k++] = $arr[$max++];
+        }
+    }
+    while ($min <= $mid) {
+        $temp[$k++] = $arr[$min++];
+    }
+    while ($max <= $high) {
+        $temp[$k++] = $arr[$max++];
+    }
+    for ($i = 0; $i < $k; $i++) {
+        $arr[$low + $i] = $temp[$i];
+    }
 }
 /**
  * end 归并排序
  */
+
+for ($i = 0; $i < 10; $i++) {
+    $arr[] = rand(0, 1000);
+}
+dump($arr);
+// bubbleSort($arr);
+// quickSort($arr, 0, count($arr) - 1);
+// insertSort($arr);
+// shellSort($arr);
+// selectSort($arr);
+// radixSort($arr);
+// heapSort($arr);
+// mergeSort($arr, 0, count($arr) - 1);
+dump($arr);
