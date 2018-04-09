@@ -26,32 +26,32 @@ function dump($arr, $i = null, $j = null, $start = null, $end = null, $pivot = n
     }
 }
 
+function swap(&$i, &$j) {
+    $temp = $i;
+    $i = $j;
+    $j = $temp;
+}
+
 /**
  * begin 冒泡排序
  *  S1：从待排序序列的起始位置开始，从前往后依次比较各个位置和其后一位置的大小并执行S2。
  *  S2：如果当前位置的值大于其后一位置的值，就把他俩的值交换（完成一次全序列比较后，序列最后位置的值即此序列最大值，所以其不需要再参与冒泡）。
  *  S3：将序列的最后位置从待排序序列中移除。若移除后的待排序序列不为空则继续执行S1，否则冒泡结束。
  */
-// function bubbleSort(&$arr) {
-
-// }
-// function bubbleSort(&$arr) {
-//     $length = count($arr);
-//     for ($i = 0; $i < $length; $i++) {
-//         $flag = true;
-//         for ($j = $i + 1; $j < $length; $j++) {
-//             if ($arr[$i] > $arr[$j]) {
-//                 $temp = $arr[$i];
-//                 $arr[$i] = $arr[$j];
-//                 $arr[$j] = $temp;
-//                 $flag = false;
-//             }
-//         }
-//         if ($flag) {
-//             break;
-//         }
-//     }
-// }
+function bubbleSort(&$arr) {
+    $length = count($arr);
+    $flag = true;
+    while ($flag) {
+        $flag = false;
+        for ($i = 0; $i < $length - 1; $i++) {
+            if ($arr[$i] < $arr[$i + 1]) {
+                swap($arr[$i], $arr[$i + 1]);
+                $flag = true;
+            }
+        }
+        $length--;
+    }
+}
 /**
  * end 冒泡排序
  */
@@ -61,13 +61,13 @@ function dump($arr, $i = null, $j = null, $start = null, $end = null, $pivot = n
  * begin 快速排序
  * 速排序是对冒泡排序的一种改进。基本思想是：通过一趟排序将要排序的数据分割成独立的两部分，其中一部分的所有数据都比另外一部分的所有数据都要小，然后再按此方法对这两部分数据分别进行快速排序，整个排序过程可以递归进行，以此实现整个数据变成有序序列。
  */
-function quickSort(&$arr, $min, $max) {
-    if ($min >= $max) {
+function quickSort(&$arr, $low, $high) {
+    if ($low >= $high) {
         return;
     }
-    $left = $min;
-    $right = $max;
-    $mid = $arr[$min];
+    $left = $low;
+    $right = $high;
+    $mid = $arr[$left];
     while ($left < $right) {
         while ($left < $right && $arr[$right] >= $mid) {
             $right--;
@@ -79,8 +79,8 @@ function quickSort(&$arr, $min, $max) {
         $arr[$right] = $arr[$left];
     }
     $arr[$left] = $mid;
-    quickSort($arr, $min, $left - 1);
-    quickSort($arr, $left + 1, $max);
+    quickSort($arr, $low, $left);
+    quickSort($arr, $left + 1, $high);
 }
 /**
  * end 快速排序
@@ -93,14 +93,14 @@ function quickSort(&$arr, $min, $max) {
 function insertSort(&$arr) {
     $length = count($arr);
     for ($i = 1; $i < $length; $i++) {
-        $temp = $arr[$i];
+        $number = $arr[$i];
         for ($j = $i - 1; $j >= 0; $j--) {
-            if ($arr[$j] <= $temp) {
+            if ($arr[$j] < $number) {
                 break;
             }
             $arr[$j + 1] = $arr[$j];
         }
-        $arr[$j + 1] = $temp;
+        $arr[$j + 1] = $number;
     }
 }
 /**
@@ -115,18 +115,15 @@ function shellSort(&$arr) {
     $length = count($arr);
     $gap = intval($length / 2);
     while ($gap > 0) {
-        for ($i = $gap; $i < $length; $i++) {
-            for ($j = $i - $gap; $j >= 0; $j--) {
-                if ($arr[$j + $gap] > $arr[$j]) {
-                    $temp = $arr[$j + $gap];
-                    $arr[$j + $gap] = $arr[$j];
-                    $arr[$j] = $temp;
+        for ($i = $gap; $i < $length; $i += $gap) {
+            for ($j = $i - $gap; $j >= 0; $j -= $gap) {
+                if ($arr[$j] > $arr[$j + $gap]) {
+                    swap($arr[$j], $arr[$j + $gap]);
                 }
             }
         }
         $gap = intval($gap / 2);
     }
-
 }
 /**
  * end shell排序
@@ -144,16 +141,14 @@ function shellSort(&$arr) {
 function selectSort(&$arr) {
     $length = count($arr);
     for ($i = 0; $i < $length; $i++) {
-        $minKey = $i;
-        for ($j = $i; $j < $length; $j++) {
-            if ($arr[$j] < $arr[$minKey]) {
-                $minKey = $j;
+        $key = $i;
+        for ($j = $i + 1; $j < $length; $j++) {
+            if ($arr[$j] < $arr[$key]) {
+                $key = $j;
             }
         }
-        if ($minKey != $i) {
-            $temp = $arr[$i];
-            $arr[$i] = $arr[$minKey];
-            $arr[$minKey] = $temp;
+        if ($key != $i) {
+            swap($arr[$i], $arr[$key]);
         }
     }
 }
@@ -171,15 +166,15 @@ function radixSort(&$arr) {
     $length = count($arr);
     $maxLength = 0;
     for ($i = 0; $i < $length; $i++) {
-        if (strlen((String) $arr[$i]) > $maxLength) {
-            $maxLength = strlen((String) $arr[$i]);
+        if ($maxLength < strlen((string) $arr[$i])) {
+            $maxLength = strlen((string) $arr[$i]);
         }
     }
     $loop = 0;
-    $basicNume = 1;
+    $basicNum = 1;
     while ($loop < $maxLength) {
         for ($i = 0; $i < $length; $i++) {
-            $lsp = intval($arr[$i] / $basicNume) % 10;
+            $lsp = intval($arr[$i] / $basicNum) % 10;
             $temp[$lsp][$order[$lsp]] = $arr[$i];
             $order[$lsp]++;
         }
@@ -189,13 +184,12 @@ function radixSort(&$arr) {
                 for ($j = 0; $j < $order[$i]; $j++) {
                     $arr[$k++] = $temp[$i][$j];
                 }
+                $order[$i] = 0;
             }
-            $order[$i] = 0;
         }
-        $basicNume *= 10;
+        $basicNum *= 10;
         $loop++;
     }
-
 }
 /**
  * end 基数排序
@@ -208,30 +202,26 @@ function radixSort(&$arr) {
 //堆排序
 function heapSort(&$arr) {
     $length = count($arr);
-    for ($i = $length; $i > 0; $i--) {
+    for ($i = $length - 1; $i > 0; $i--) {
         maxHeap($arr, $i);
-        $max = $arr[0];
-        $arr[0] = $arr[$i - 1];
-        $arr[$i - 1] = $max;
+        swap($arr[0], $arr[$i]);
     }
 }
 //建立大根堆
 function maxHeap(&$arr, $max) {
-    $maxKey = intval($max / 2);
-    for ($i = $maxKey - 1; $i >= 0; $i--) {
+    $high = intval(($max + 1) / 2) - 1;
+    for ($i = $high; $i >= 0; $i--) {
         $key = $i;
         $left = 2 * $i + 1;
         $right = 2 * $i + 2;
-        if ($left <= $max - 1 && $arr[$left] > $arr[$key]) {
+        if ($left <= $max && $arr[$left] > $arr[$key]) {
             $key = $left;
         }
-        if ($right <= $max - 1 && $arr[$right] > $arr[$key]) {
+        if ($right <= $max && $arr[$right] > $arr[$key]) {
             $key = $right;
         }
         if ($key != $i) {
-            $temp = $arr[$key];
-            $arr[$key] = $arr[$i];
-            $arr[$i] = $temp;
+            swap($arr[$i], $arr[$key]);
         }
     }
 }
