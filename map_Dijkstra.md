@@ -1,5 +1,5 @@
 ### 单源最路径
->Dijkstra算法 O(n^2) 邻接矩阵
+>Dijkstra算法 O((N+M)LogN) 邻接矩阵
 
 ```
 map = [
