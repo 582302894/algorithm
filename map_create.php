@@ -3,8 +3,10 @@
 define('WALL', 1);
 define('ROAD', 0);
 define('NOTHING', 2);
-define('MAP_SIZE', 15);
+define('MAP_SIZE', 49);
 define('MAP_IMG_POINT_SIZE', 10);
+define('FILE_DIR', __DIR__ . '/temp/');
+
 $map = [];
 $size = MAP_SIZE;
 
@@ -17,13 +19,13 @@ $end = [
     'y' => $size,
 ];
 
-$map = createMap($size);
-throughMap($map);
-draw($map);
-createMapImg($map);
+// throughMap($map);
+// draw($map);
+// createMapImg($map);
 
 function draw($map) {
-    $file = __DIR__ . '/map';
+    $file = FILE_DIR . 'map';
+
     $fp = fopen($file, 'w+');
     foreach ($map as $value) {
         foreach ($value as $v) {
@@ -64,46 +66,6 @@ function createMap($size) {
     return $map;
 }
 
-/*
-获得点集合
- */
-function getMapE($map) {
-    for ($i = 1; $i <= MAP_SIZE; $i++) {
-        for ($j = 1; $j <= MAP_SIZE; $j++) {
-            if ($map[$i][$j] == ROAD) {
-                $e[] = [$i, $j];
-            }
-        }
-    }
-    return $e;
-}
-
-/*
-获得边集合
- */
-function getMapV($map) {
-    for ($i = 1; $i <= MAP_SIZE; $i++) {
-        for ($j = 1; $j <= MAP_SIZE; $j++) {
-            if ($map[$i][$j] == WALL) {
-                if ($map[$i][$j - 1] == ROAD && $map[$i][$j + 1] == ROAD) {
-                    $v[] = [
-                        [$i, $j - 1, $i . "_" . ($j - 1)],
-                        [$i, $j + 1, $i . "_" . ($j + 1)],
-                        [$i, $j]];
-                }
-                if ($map[$i + 1][$j] == ROAD && $map[$i - 1][$j] == ROAD) {
-                    $v[] = [
-                        [$i - 1, $j, ($i - 1) . "_" . $j],
-                        [$i + 1, $j, ($i + 1) . "_" . $j],
-                        [$i, $j],
-                    ];
-                }
-            }
-        }
-    }
-    return $v;
-}
-
 function createMapImg($map) {
     $width = (MAP_SIZE + 2) * MAP_IMG_POINT_SIZE;
     $height = $width;
@@ -125,85 +87,163 @@ function createMapImg($map) {
             }
         }
     }
-    imagepng($img, 'map.png');
+    imagepng($img, FILE_DIR . 'map.png');
     imagedestroy($img);
 }
 
-function throughMap(&$map) {
-    $e = getMapE($map);
-    $v = getMapV($map);
-    $trees = [];
-    $rand = array_rand($e);
+/*
+边的集合
+ */
+class EList {
+    //所有点的list集合,
+    public $e;
+    public $eX;
+    public $eY;
 
-    $eW = [];
-    for ($i = 0; $i < count($e); $i++) {
-        $x = $e[$i][0];
-        $y = $e[$i][1];
-        $key = $x . "_" . $y;
-        $eW[$key] = [
-            'w' => 0,
-            'e' => $e[$i],
-        ];
+    public function __construct($map) {
+        $vNum = (MAP_SIZE + 2);
+        $sum = $vNum * $vNum;
+        for ($i = 1; $i < $vNum - 1; $i++) {
+            for ($j = 1; $j < $vNum - 1; $j++) {
+                if ($i % 2 == 1 && $j % 2 == 1) {
+                    $key = $i * $vNum + $j + 1;
+                    $this->e[
+                        $key
+                    ] = 0;
+                    $this->eX[$key] = $i;
+                    $this->eY[$key] = $j;
+                }
+            }
+        }
     }
-    $vW = [];
-    for ($i = 0; $i < count($v); $i++) {
-        $key = $v[$i][0][2] . "_" . $v[$i][1][2];
-        $vW[$key] = $v[$i];
-        $vW[$key][2]['w'] = 0;
+}
+/*
+边的集合
+ */
+class VList {
+    //边集合
+    public $v;
+    //边的纵坐标
+    public $vX;
+    //边的横坐标
+    public $vY;
+    // start e point
+    public $vSE;
+    // end e point
+    public $vEE;
+
+    public function __construct($map) {
+        $vNum = (MAP_SIZE + 2);
+        $sum = $vNum * $vNum;
+        for ($i = 1; $i < $vNum - 1; $i++) {
+            for ($j = 1; $j < $vNum - 1; $j++) {
+                //横向边
+                if ($i % 2 == 1 && $j % 2 == 0) {
+                    $key = $i * $vNum + $j + 1;
+                    $this->v[$key] = 0;
+                    $this->vX[$key] = $i;
+                    $this->vY[$key] = $j;
+                    $this->vSE[$key] = $i * $vNum + $j;
+                    $this->vEE[$key] = $i * $vNum + $j + 1 + 1;
+                }
+                //竖向边
+                if ($i % 2 == 0 && $j % 2 == 1) {
+                    $key = $i * $vNum + $j + 1;
+                    $this->v[$key] = 0;
+                    $this->vX[$key] = $i;
+                    $this->vY[$key] = $j;
+                    $this->vSE[$key] = ($i - 1) * $vNum + $j + 1;
+                    $this->vEE[$key] = ($i + 1) * $vNum + $j + 1;
+                }
+            }
+        }
     }
-    $randPoint = array_rand($e);
-    $vs = getPointFourV($e[$randPoint]);
-    $eW[$e[$randPoint][0] . "_" . $e[$randPoint][1]]['w'] = 1;
+}
+
+function throughMap(&$map) {
+
+    $eList = new \EList($map);
+    $e = $eList->e;
+    $eX = $eList->eX;
+    $eY = $eList->eY;
+    $vList = new \VList($map);
+    $v = $vList->v;
+    $vX = $vList->vX;
+    $vY = $vList->vY;
+    $vSE = $vList->vSE;
+    $vEE = $vList->vEE;
+
+    $randE = array_rand($e);
+    $e[$randE] = 1;
     $randV = [];
-    addPointV($randV, $vs, $vW);
+    addEV($randE, $randV, $v);
+
     $count = 1;
     $eCount = count($e);
+
     while ($count < $eCount) {
-        $vKey = array_rand($randV);
-        $point1Key = $vW[$vKey][0][2];
-        $point2Key = $vW[$vKey][1][2];
-        if ($eW[$point1Key]['w'] ^ $eW[$point2Key]['w'] == 1) {
-            if ($eW[$point1Key]['w'] == 0) {
-                $count++;
-                addPointV($randV, getPointFourV($vW[$vKey][0]), $vW);
-                $eW[$point1Key]['w'] = 1;
-            }
-            if ($eW[$point2Key]['w'] == 0) {
-                $count++;
-                addPointV($randV, getPointFourV($vW[$vKey][1]), $vW);
-                $eW[$point2Key]['w'] = 1;
-            }
-            $map[$vW[$vKey][2][0]][$vW[$vKey][2][1]] = ROAD;
-            continue;
+        if (empty($randV)) {
+            break;
         }
-        unset($randV[$vKey]);
+
+        //边集合中随机出一条边
+        $randVKey = array_rand($randV);
+        $vKey = $randV[$randVKey];
+
+        //获取边相邻两点判断是否连通
+        $pointS = $vSE[$vKey];
+        $pointE = $vEE[$vKey];
+        if ($e[$pointS] ^ $e[$pointE] == 1) {
+            $count++;
+            //连通 打通边 设置点已使用 将未使用的点相邻的边合入边集合
+            if ($e[$pointS] == 0) {
+                $e[$pointS] = 1;
+                addEV($pointS, $randV, $v);
+            }
+            if ($e[$pointE] == 0) {
+                $e[$pointE] = 1;
+                addEV($pointE, $randV, $v);
+            }
+            $map[$vX[$vKey]][$vY[$vKey]] = ROAD;
+        }
+        unset($randV[$randVKey]);
     }
 }
 
-function getPointFourV($point) {
-    $x = $point[0];
-    $y = $point[1];
-    return [
-        //上
-        implode('_', [$x - 2, $y, $x, $y]),
-        //下
-        implode('_', [$x, $y, $x + 2, $y]),
-        //左
-        implode('_', [$x, $y - 2, $x, $y]),
-        //右
-        implode('_', [$x, $y, $x, $y + 2]),
+function addEV($e, &$randV, &$v) {
+    $eV = [
+        //up
+        $e - MAP_SIZE - 2,
+        //down
+        $e + MAP_SIZE + 2,
+        //left
+        $e - 1,
+        //right
+        $e + 1,
     ];
-}
 
-function addPointV(&$randV, $vs, $vW) {
-    for ($i = 0; $i < count($vs); $i++) {
-        $key = $vs[$i];
-        if (isset($randV[$key])) {
+    $vSingleNum = MAP_SIZE + 2;
+    foreach ($eV as $vKey) {
+        if (!isset($v[$vKey])) {
             continue;
         }
-        if (!isset($vW[$key])) {
+        if ($v[$vKey] == 1) {
             continue;
         }
-        $randV[$key] = 1;
+        //边界
+        $y = $vKey % $vSingleNum;
+        if ($y <= 1) {
+            continue;
+        }
+        $x = intval($vKey / $vSingleNum) + 1;
+        if ($x == 1 || $x == $vSingleNum) {
+            continue;
+        }
+        $randV[] = $vKey;
+        $v[$vKey] = 1;
     }
 }
+
+$map = createMap($size);
+throughMap($map);
+createMapImg($map);
