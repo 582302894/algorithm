@@ -3,25 +3,12 @@
 define('WALL', 1);
 define('ROAD', 0);
 define('NOTHING', 2);
+define('MAP_ROAD', 9);
 define('MAP_SIZE', 49);
 define('MAP_IMG_POINT_SIZE', 10);
 define('FILE_DIR', __DIR__ . '/temp/');
 
 $map = [];
-$size = MAP_SIZE;
-
-$start = [
-    'x' => 1,
-    'y' => 1,
-];
-$end = [
-    'x' => $size,
-    'y' => $size,
-];
-
-// throughMap($map);
-// draw($map);
-// createMapImg($map);
 
 function draw($map) {
     $file = FILE_DIR . 'map';
@@ -66,12 +53,18 @@ function createMap($size) {
     return $map;
 }
 
-function createMapImg($map) {
+function createMapImg($map, $road = []) {
     $width = (MAP_SIZE + 2) * MAP_IMG_POINT_SIZE;
     $height = $width;
     $img = imagecreate($width, $height);
     imagecolorallocate($img, 255, 255, 255);
     $black = imagecolorresolve($img, 0, 0, 0);
+    $red = imagecolorresolve($img, 255, 0, 0);
+
+    $roadW = [];
+    foreach ($road as $value) {
+        $roadW[getEkey($value)] = 1;
+    }
 
     for ($i = 0; $i < MAP_SIZE + 2; $i++) {
         for ($j = 0; $j < MAP_SIZE + 2; $j++) {
@@ -84,10 +77,23 @@ function createMapImg($map) {
                     ($j + 1) * MAP_IMG_POINT_SIZE,
                     $black
                 );
+            } elseif ($map[$i][$j] == MAP_ROAD) {
+                imagefilledrectangle(
+                    $img,
+                    $i * MAP_IMG_POINT_SIZE,
+                    $j * MAP_IMG_POINT_SIZE,
+                    ($i + 1) * MAP_IMG_POINT_SIZE,
+                    ($j + 1) * MAP_IMG_POINT_SIZE,
+                    $red
+                );
             }
         }
     }
-    imagepng($img, FILE_DIR . 'map.png');
+    if (!empty($road)) {
+        imagepng($img, FILE_DIR . 'mapRoad.png');
+    } else {
+        imagepng($img, FILE_DIR . 'map.png');
+    }
     imagedestroy($img);
 }
 
@@ -244,6 +250,84 @@ function addEV($e, &$randV, &$v) {
     }
 }
 
-$map = createMap($size);
+function findMapRoad($map, &$road) {
+    $queue = [];
+    $head = 0;
+    $tail = 0;
+    $start = [1, 1];
+    $end = [MAP_SIZE, MAP_SIZE];
+    $queue[$tail++] = $start;
+    $eStartKey = getEkey($start);
+    $e[$eStartKey] = 1;
+    $path[$eStartKey] = $eStartKey;
+
+    while ($head < $tail) {
+        $point = $queue[$head++];
+        $pointKey = getEkey($point);
+        //up down left right
+        $neighbor = [
+            [$point[0] - 1, $point[1]],
+            [$point[0] + 1, $point[1]],
+            [$point[0], $point[1] - 1],
+            [$point[0], $point[1] + 1],
+        ];
+        shuffle($neighbor);
+        for ($i = 0; $i < 4; $i++) {
+            if ($neighbor[$i][0] == $end[0] && $neighbor[$i][1] == $end[1]) {
+                $endPointKey = getEkey($neighbor[$i]);
+                $path[$endPointKey] = $pointKey;
+                $road = showTheWay($path, $start, $end);
+                return;
+            }
+            if ($map[$neighbor[$i][0]][$neighbor[$i][1]] == ROAD) {
+                $neighborEkey = getEkey($neighbor[$i]);
+                if (!isset($e[$neighborEkey])) {
+                    $queue[$tail++] = $neighbor[$i];
+                    $path[$neighborEkey] = $pointKey;
+                }
+            }
+        }
+        $e[$pointKey] = 1;
+    }
+}
+
+function getEkey($point) {
+    return $point[0] * (MAP_SIZE + 2) + $point[1] + 1;
+}
+
+function getPoint($key) {
+    return [intval($key / (MAP_SIZE + 2)), $key % (MAP_SIZE + 2) - 1];
+}
+
+function showTheWay($path, $start, $end) {
+    $nowPointKey = getEkey($end);
+    $top = 0;
+    $stack[$top++] = $end;
+
+    $parentEkey = $path[$nowPointKey];
+
+    while ($parentEkey != $nowPointKey) {
+        $nowPointKey = $parentEkey;
+        $parentEkey = $path[$nowPointKey];
+        $stack[$top++] = getPoint($nowPointKey);
+    }
+    while ($top > 0) {
+        $road[] = $stack[--$top];
+    }
+    return $road;
+}
+
+$map = createMap(MAP_SIZE);
 throughMap($map);
-createMapImg($map);
+// createMapImg($map);
+
+findMapRoad($map, $road);
+
+draw($map);
+for ($i = 0; $i < count($road); $i++) {
+    $map[$road[$i][0]][$road[$i][1]] = MAP_ROAD;
+}
+
+draw($map);
+
+createMapImg($map, $road);
