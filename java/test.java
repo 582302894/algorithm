@@ -5,18 +5,11 @@ import edu.StdOut;
 import edu.StdRandom;
 
 class Test {
-
     public static void main(String[] args) {
-        Bag<Integer> bag=new Bag<Integer>();
-        bag.add(1);
-        bag.add(2);
-        bag.add(3);
-        bag.add(4);
-        bag.add(5);
-        bag.add(6);
-        bag.add(7);
-        for (int  x : bag) {
-            StdOut.println(x);
-        }
+        StdDraw.setXscale(0,10);
+        StdDraw.setYscale(0, 10);
+        StdDraw.setPenRadius(.01);
+        // int[][] points = new int[8][2];
+        StdDraw.line(0,1,2,3);
     }
 }

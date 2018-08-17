@@ -1,4 +1,4 @@
-// 两个栈存储运算符与运算表达式
+// 两个栈存储运算符与运算表达式、0
 
 import edu.Stack;
 import edu.StdIn;
