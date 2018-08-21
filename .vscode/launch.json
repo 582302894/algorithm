@@ -16,7 +16,8 @@
             "classPaths": [
                 "",
                 "$(workspaceRoot)/java",
-                "$(workspaceRoot)/java/edu"
+                "$(workspaceRoot)/java/edu",
+                "$(workspaceRoot)/java/self"
             ],
         },
         {
