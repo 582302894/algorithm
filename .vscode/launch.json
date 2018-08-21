@@ -12,7 +12,12 @@
             "console": "internalConsole",
             "stopOnEntry": false,
             "mainClass": "",
-            "args": ""
+            "args": "",
+            "classPaths": [
+                "",
+                "$(workspaceRoot)/java",
+                "$(workspaceRoot)/java/edu"
+            ],
         },
         {
             "type": "java",
