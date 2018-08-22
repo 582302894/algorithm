@@ -3,7 +3,7 @@ if [ ! -n "$1" ];then
     echo 'not input file'
     exit
 fi
-javac "$1.java" -Xdiags:verbose -Xlint:unchecked 
+javac "$1.java" -Xdiags:verbose -Xlint:unchecked -encoding UTF-8
 filename=$1
 head=${filename:0:1}
 head="$(echo $head | tr '[:lower:]' '[:upper:]')"
